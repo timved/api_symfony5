@@ -1,0 +1,50 @@
+version: '3.0'
+
+services:
+  nginx:
+    build:
+      context: ./docker/nginx
+    volumes:
+      - ./:/api
+    container_name: api-nginx
+    restart: always
+    ports:
+      - "80:80"
+    command: nginx -g 'daemon off;'
+
+  php-fpm:
+    build:
+      context: ./docker/php-fpm
+    environment:
+      XDEBUG_CONFIG: "remote_host=172.18.18.1 remote_enable=1 remote_autostart=off  remote_port=9001"
+      PHP_IDE_CONFIG: "serverName=first"
+    volumes:
+      - ./:/api
+    container_name: api-php-fpm
+    depends_on:
+      - db
+
+  php-cli:
+    build:
+      context: ./docker/php-cli
+    volumes:
+      - ./:/api
+    command: sleep 10000
+    container_name: api-php-cli
+
+  db:
+    container_name: api-postgres
+    image: postgres
+    volumes:
+      - ./data/db/postgres:/var/lib/postgresql/data
+    ports:
+      - "5431:5432"
+    restart: always
+    environment:
+      - POSTGRES_PASSWORD=dev
+      - POSTGRES_USER=dev
+      - POSTGRES_DB=dev
+    command: postgres
+
+volumes:
+  db:
